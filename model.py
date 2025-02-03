@@ -1,22 +1,25 @@
-# Importation des modules nécessaires
+# Importation des bibliothèques nécessaires
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-
-# Désactiver CUDA et forcer l'utilisation du CPU uniquement
 import os
+
+# Désactiver CUDA pour forcer l'utilisation du CPU uniquement
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-# Définition des fonctions de métriques
+# Fonction pour calculer MAE
 def mae(y_true, y_pred):
     """Calcule l'erreur absolue moyenne entre y_true et y_pred."""
-    return tf.keras.metrics.mean_absolute_error(y_true, y_pred).numpy()
+    loss = tf.keras.losses.MeanAbsoluteError()
+    return loss(y_true, y_pred).numpy()
 
+# Fonction pour calculer MSE
 def mse(y_true, y_pred):
     """Calcule l'erreur quadratique moyenne entre y_true et y_pred."""
-    return tf.keras.metrics.mean_squared_error(y_true, y_pred).numpy()
+    loss = tf.keras.losses.MeanSquaredError()
+    return loss(y_true, y_pred).numpy()
 
-# Création et affichage de la version de TensorFlow
+# Affichage de la version de TensorFlow
 print(f"TensorFlow Version: {tf.__version__}")
 
 # Génération des données
@@ -33,8 +36,7 @@ X_train, X_test = X_train.reshape(-1, 1), X_test.reshape(-1, 1)
 
 # Définition du modèle
 model = tf.keras.Sequential([
-    tf.keras.Input(shape=(1,)),  # Entrée explicite
-    tf.keras.layers.Dense(10, activation="relu"),
+    tf.keras.layers.Dense(10, activation="relu", input_shape=(1,)),
     tf.keras.layers.Dense(1)
 ])
 
