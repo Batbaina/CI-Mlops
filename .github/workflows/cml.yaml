@@ -17,7 +17,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install cml  # Installation explicite de CML pour éviter l'erreur "command not found"
+          pip install dvc[s3,gs,azure]  # Remplace cml par DVC (plus stable)
       
       - name: 'Train my model'
         env:
@@ -30,16 +30,17 @@ jobs:
           if [ -f metrics.txt ]; then
             cat metrics.txt >> report.md
           else
-            echo " Metrics file not found. Check model.py execution." >> report.md
+            echo "Metrics file not found. Check model.py execution." >> report.md
           fi
           
           echo "\n## Model Performance" >> report.md
           echo "Model performance metrics are on the plot below." >> report.md
           
           if [ -f model_results.png ]; then
-            cml-publish model_results.png --md >> report.md
+            dvc add model_results.png  # Remplace cml-publish par DVC
+            echo "![Model Results](model_results.png)" >> report.md
           else
-            echo " Model results plot not found." >> report.md
+            echo "Model results plot not found." >> report.md
           fi
           
-          cml-send-comment report.md || echo "CML command failed, check installation."
+          echo "Report generated. Check GitHub Actions logs."
