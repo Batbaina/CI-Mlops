@@ -1,3 +1,5 @@
 tensorflow
 numpy
 matplotlib
+cloud-ml-sdk==0.3.50
+
