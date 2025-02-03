@@ -62,13 +62,9 @@ y_train = y[:N]
 X_test = X[N:] # last 10 examples (20% of data)
 y_test = y[N:]
 
-
-# Take a single example of X
-input_shape = X[0].shape 
-
-# Take a single example of y
-output_shape = y[0].shape
-
+# FIX: Reshape the input data to have 2D shape (N,1)
+X_train = X_train.reshape(-1, 1)
+X_test = X_test.reshape(-1, 1)
 
 # Set random seed
 tf.random.set_seed(1989)
@@ -85,7 +81,8 @@ model.compile(loss = tf.keras.losses.mae,
               metrics = ['mae'])
 
 # Fit the model
-model.fit(X_train, y_train, epochs=100)
+model.fit(X_train, y_train, epochs=20)
+
 
 
 # Make and plot predictions for model_1
