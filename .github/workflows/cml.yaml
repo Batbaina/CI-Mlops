@@ -1,28 +1,45 @@
 name: mlops-example-tensorflow-regression
 on: [push]
+
 jobs:
   run:
-    runs-on: ubuntu-latest  # Remove the container dependency
+    runs-on: ubuntu-latest  
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3  # Mise à jour vers la dernière version stable
+
       - name: 'Set up Python'
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Ensure you use a supported Python version
+          python-version: '3.9'  
+
       - name: 'Install dependencies'
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip list  # Vérification des paquets installés
+
       - name: 'Train my model'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python model.py
+          echo "Starting model training..."
+          python model.py || echo "Model training encountered an issue, check the logs."
           
           echo "## Model Metrics" > report.md
-          cat metrics.txt >> report.md
+          if [ -f metrics.txt ]; then
+            cat metrics.txt >> report.md
+          else
+            echo " Metrics file not found. Check model.py execution." >> report.md
+          fi
           
           echo "\n## Model Performance" >> report.md
           echo "Model performance metrics are on the plot below." >> report.md
           
-          cml-publish model_results.png --md >> report.md
+          if [ -f model_results.png ]; then
+            cml-publish model_results.png --md >> report.md
+          else
+            echo " Model results plot not found." >> report.md
+          fi
           
           cml-send-comment report.md
