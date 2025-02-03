@@ -1,43 +1,72 @@
-# Importer les bibliothèques
+# Importation des modules nécessaires
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Générer des données simples
-X = np.linspace(-10, 10, 100).astype(np.float32)  # 100 points entre -10 et 10
-y = 2 * X + 5 + np.random.normal(0, 2, size=X.shape)  # y = 2X + 5 + un bruit gaussien
+# Désactiver CUDA et forcer l'utilisation du CPU uniquement
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-# Séparer les données en train et test
-N = int(len(X) * 0.8)  # 80% pour l'entraînement
+# Définition des fonctions de métriques
+def mae(y_true, y_pred):
+    """Calcule l'erreur absolue moyenne entre y_true et y_pred."""
+    return tf.keras.metrics.mean_absolute_error(y_true, y_pred).numpy()
+
+def mse(y_true, y_pred):
+    """Calcule l'erreur quadratique moyenne entre y_true et y_pred."""
+    return tf.keras.metrics.mean_squared_error(y_true, y_pred).numpy()
+
+# Création et affichage de la version de TensorFlow
+print(f"TensorFlow Version: {tf.__version__}")
+
+# Génération des données
+X = np.arange(-100, 100, 4)
+y = np.arange(-90, 110, 4)
+
+# Séparation en données d'entraînement et de test
+N = 25
 X_train, y_train = X[:N], y[:N]
 X_test, y_test = X[N:], y[N:]
 
-# Reshape pour s'assurer que Keras accepte les dimensions
-X_train = X_train.reshape(-1, 1)
-X_test = X_test.reshape(-1, 1)
+# Reshape pour s'assurer que les données sont en format 2D
+X_train, X_test = X_train.reshape(-1, 1), X_test.reshape(-1, 1)
 
-# Définir le modèle simple
+# Définition du modèle
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(1, input_shape=(1,))
+    tf.keras.Input(shape=(1,)),  # Entrée explicite
+    tf.keras.layers.Dense(10, activation="relu"),
+    tf.keras.layers.Dense(1)
 ])
 
-# Compiler le modèle
-model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(learning_rate=0.1))
+# Compilation du modèle
+model.compile(loss="mae",
+              optimizer=tf.keras.optimizers.Adam(),
+              metrics=["mae"])
 
-# Entraîner le modèle
-model.fit(X_train, y_train, epochs=100, verbose=0)
+# Entraînement du modèle
+model.fit(X_train, y_train, epochs=50, verbose=1)
 
-# Faire des prédictions
+# Prédictions
 y_preds = model.predict(X_test)
 
-# Afficher les résultats
+# Calcul des métriques
+mae_value = round(mae(y_test, y_preds), 2)
+mse_value = round(mse(y_test, y_preds), 2)
+print(f"Mean Absolute Error: {mae_value}, Mean Squared Error: {mse_value}")
+
+# Enregistrement des métriques
+with open("metrics.txt", "w") as f:
+    f.write(f"MAE: {mae_value}, MSE: {mse_value}")
+
+# Affichage des prédictions
 plt.figure(figsize=(6, 5))
-plt.scatter(X_train, y_train, c="blue", label="Données d'entraînement")
-plt.scatter(X_test, y_test, c="green", label="Données de test")
-plt.plot(X_test, y_preds, c="red", linewidth=2, label="Prédictions du modèle")
+plt.scatter(X_train, y_train, c="b", label="Training Data")
+plt.scatter(X_test, y_test, c="g", label="Testing Data")
+plt.scatter(X_test, y_preds, c="r", label="Predictions")
 plt.legend()
-plt.title("Régression linéaire avec Keras")
-plt.xlabel("X")
-plt.ylabel("y")
 plt.grid()
+plt.title("Model Predictions")
+plt.xlabel("X values")
+plt.ylabel("Y values")
+plt.savefig("model_results.png", dpi=120)
 plt.show()
