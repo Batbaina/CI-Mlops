@@ -1,95 +1,74 @@
-# Import modules and packages
+# Importation des bibliothèques nécessaires
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
-# Functions and procedures
-def plot_predictions(train_data, train_labels, test_data, test_labels, predictions):
-    """
-    Plots training data, test data, and compares predictions.
-    """
-    plt.figure(figsize=(6, 5))
-    # Plot training data in blue
-    plt.scatter(train_data, train_labels, c="b", label="Training data")
-    # Plot test data in green
-    plt.scatter(test_data, test_labels, c="g", label="Testing data")
-    # Plot predictions in red
-    plt.scatter(test_data, predictions, c="r", label="Predictions")
-    # Show the legend
-    plt.legend(shadow=True)  # FIXED: shadow=True (boolean)
-    # Set grids
-    plt.grid(which='major', c='#cccccc', linestyle='--', alpha=0.5)
-    # Labels
-    plt.title('Model Results', family='Arial', fontsize=14)
-    plt.xlabel('X axis values', family='Arial', fontsize=11)
-    plt.ylabel('Y axis values', family='Arial', fontsize=11)
-    # Save the figure
-    plt.savefig('model_results.png', dpi=120)
+# Désactiver CUDA pour forcer l'utilisation du CPU uniquement
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
+# Fonction pour calculer MAE
 def mae(y_true, y_pred):
-    """
-    Calculates mean absolute error (MAE).
-    """
-    return tf.keras.losses.MAE(y_true, y_pred).numpy()  # FIXED: Using correct MAE function
+    """Calcule l'erreur absolue moyenne entre y_true et y_pred."""
+    loss = tf.keras.losses.MeanAbsoluteError()
+    return loss(y_true, y_pred).numpy()
 
+# Fonction pour calculer MSE
 def mse(y_true, y_pred):
-    """
-    Calculates mean squared error (MSE).
-    """
-    return tf.keras.losses.MSE(y_true, y_pred).numpy()  # FIXED: Using correct MSE function
+    """Calcule l'erreur quadratique moyenne entre y_true et y_pred."""
+    loss = tf.keras.losses.MeanSquaredError()
+    return loss(y_true, y_pred).numpy()
 
-# Check TensorFlow version
+# Affichage de la version de TensorFlow
 print(f"TensorFlow Version: {tf.__version__}")
 
-# Create features (input data)
-X = np.arange(-100, 100, 4).astype(np.float32)  # Convert to float for TF compatibility
+# Génération des données
+X = np.arange(-100, 100, 4)
+y = np.arange(-90, 110, 4)
 
-# Create labels (output data)
-y = np.arange(-90, 110, 4).astype(np.float32)  # Convert to float for TF compatibility
-
-# Split data into train and test sets
+# Séparation en données d'entraînement et de test
 N = 25
-X_train = X[:N]  # First 25 examples (training data)
-y_train = y[:N]
+X_train, y_train = X[:N], y[:N]
+X_test, y_test = X[N:], y[N:]
 
-X_test = X[N:]  # Remaining examples (test data)
-y_test = y[N:]
+# Reshape pour s'assurer que les données sont en format 2D
+X_train, X_test = X_train.reshape(-1, 1), X_test.reshape(-1, 1)
 
-# FIXED: Reshape input data to ensure correct shape (N, 1)
-X_train = X_train.reshape(-1, 1)
-X_test = X_test.reshape(-1, 1)
-
-# Set random seed for reproducibility
-tf.random.set_seed(1989)
-
-# Create a model using the Sequential API
+# Définition du modèle
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(1, input_shape=(1,)),  # Ensure correct input shape
+    tf.keras.layers.Dense(10, activation="relu", input_shape=(1,)),
     tf.keras.layers.Dense(1)
 ])
 
-# Compile the model
-model.compile(loss=tf.keras.losses.MAE,  # Mean Absolute Error
-              optimizer=tf.keras.optimizers.SGD(),
-              metrics=['mae'])
+# Compilation du modèle
+model.compile(loss="mae",
+              optimizer=tf.keras.optimizers.Adam(),
+              metrics=["mae"])
 
-# Train the model
-model.fit(X_train, y_train, epochs=20)
+# Entraînement du modèle
+model.fit(X_train, y_train, epochs=50, verbose=1)
 
-# Make predictions
+# Prédictions
 y_preds = model.predict(X_test)
 
-# Plot predictions
-plot_predictions(train_data=X_train, train_labels=y_train,
-                 test_data=X_test, test_labels=y_test, predictions=y_preds)
+# Calcul des métriques
+mae_value = round(mae(y_test, y_preds), 2)
+mse_value = round(mse(y_test, y_preds), 2)
+print(f"Mean Absolute Error: {mae_value}, Mean Squared Error: {mse_value}")
 
-# Calculate model evaluation metrics
-mae_value = round(mae(y_test, y_preds), 2)  # FIXED: Proper function usage
-mse_value = round(mse(y_test, y_preds), 2)  # FIXED: Proper function usage
+# Enregistrement des métriques
+with open("metrics.txt", "w") as f:
+    f.write(f"MAE: {mae_value}, MSE: {mse_value}")
 
-# Display results
-print(f'\nMean Absolute Error = {mae_value}, Mean Squared Error = {mse_value}.')
-
-# Write metrics to file
-with open('metrics.txt', 'w') as outfile:
-    outfile.write(f'\nMean Absolute Error = {mae_value}, Mean Squared Error = {mse_value}.')
+# Affichage des prédictions
+plt.figure(figsize=(6, 5))
+plt.scatter(X_train, y_train, c="b", label="Training Data")
+plt.scatter(X_test, y_test, c="g", label="Testing Data")
+plt.scatter(X_test, y_preds, c="r", label="Predictions")
+plt.legend()
+plt.grid()
+plt.title("Model Predictions")
+plt.xlabel("X values")
+plt.ylabel("Y values")
+plt.savefig("model_results.png", dpi=120)
+plt.show()
