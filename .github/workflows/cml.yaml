@@ -3,22 +3,22 @@ on: [push]
 
 jobs:
   run:
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3  # Mise à jour vers la dernière version stable
-
+      - name: 'Checkout repository'
+        uses: actions/checkout@v2
+      
       - name: 'Set up Python'
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  
-
+          python-version: '3.9'
+      
       - name: 'Install dependencies'
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip list  # Vérification des paquets installés
-
+          pip install cml  # Installation explicite de CML pour éviter l'erreur "command not found"
+      
       - name: 'Train my model'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -42,4 +42,4 @@ jobs:
             echo " Model results plot not found." >> report.md
           fi
           
-          cml-send-comment report.md
+          cml-send-comment report.md || echo "CML command failed, check installation."
